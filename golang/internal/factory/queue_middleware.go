@@ -99,7 +99,14 @@ func (qm *QueueMiddleware) Close() error {
 	}
 
 	if errCh != nil {
-		return errCh
+		return m.ErrMessageMiddlewareClose
 	}
-	return errConn
+	qm.ch = nil
+
+	if errConn != nil {
+		return m.ErrMessageMiddlewareClose
+	}
+	qm.conn = nil
+
+	return nil
 }
