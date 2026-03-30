@@ -58,7 +58,7 @@ func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack f
 	)
 
 	if err != nil {
-		return m.ErrMessageMiddlewareDisconnected
+		return m.ErrMessageMiddlewareMessage
 	}
 
 	for d := range msgs {
