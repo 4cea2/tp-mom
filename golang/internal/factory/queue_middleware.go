@@ -62,6 +62,8 @@ func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack f
 	}
 
 	for d := range msgs {
+		msg := m.Message{Body: string(d.Body)}
+
 		ack := func() {
 			d.Ack(
 				false, // only ack this message, not the ones before
@@ -73,7 +75,7 @@ func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack f
 				true,  // requeue this message instead of discarding it
 			)
 		}
-		callbackFunc(m.Message{Body: string(d.Body)}, ack, nack)
+		callbackFunc(msg, ack, nack)
 	}
 
 	return m.ErrMessageMiddlewareDisconnected // msgs is closed
