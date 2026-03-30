@@ -76,7 +76,7 @@ func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack f
 		callbackFunc(m.Message{Body: string(d.Body)}, ack, nack)
 	}
 
-	return nil
+	return m.ErrMessageMiddlewareDisconnected // msgs is closed
 }
 
 func (qm *QueueMiddleware) StopConsuming() {
