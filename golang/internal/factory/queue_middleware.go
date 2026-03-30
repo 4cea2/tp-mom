@@ -84,6 +84,14 @@ func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack f
 }
 
 func (qm *QueueMiddleware) StopConsuming() {
+	if qm.conn == nil || qm.ch == nil {
+		// La firma no devuelve error, pero en su definición si (preguntar)
+		// return m.ErrMessageMiddlewareDisconnected
+	}
+	err := qm.ch.Cancel("", false)
+	if err != nil {
+		// Ya se habia cerrado el channel? no hago nada?
+	}
 }
 
 func (qm *QueueMiddleware) Send(msg m.Message) (err error) {
