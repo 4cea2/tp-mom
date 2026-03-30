@@ -43,6 +43,35 @@ func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.
 }
 
 func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) (err error) {
+	msgs, err := qm.ch.Consume(
+		qm.q.Name,
+		"",
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+
+	if err != nil {
+		return m.ErrMessageMiddlewareDisconnected
+	}
+
+	for d := range msgs {
+		ack := func() {
+			d.Ack(
+				false, // only ack this message, not the ones before
+			)
+		}
+		nack := func() {
+			d.Nack(
+				false, // only nack this message, not the ones before
+				true,  // requeue this message instead of discarding it
+			)
+		}
+		callbackFunc(m.Message{Body: string(d.Body)}, ack, nack)
+	}
+
 	return nil
 }
 
