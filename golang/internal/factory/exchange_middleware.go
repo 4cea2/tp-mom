@@ -10,6 +10,7 @@ import (
 type ExchangeMiddleware struct {
 	conn *amqp.Connection
 	ch   *amqp.Channel
+	keys []string
 }
 
 func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.ConnSettings) (m.Middleware, error) {
@@ -27,9 +28,11 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 		return nil, err
 	}
 
+	em.keys = keys
+
 	err = em.ch.ExchangeDeclare(
 		exchange, // name
-		"fanout", // type
+		"direct", // type
 		false,    // durability
 		false,    // auto-deleted
 		false,    // internal
