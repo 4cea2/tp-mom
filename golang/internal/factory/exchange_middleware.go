@@ -8,9 +8,10 @@ import (
 )
 
 type ExchangeMiddleware struct {
-	conn *amqp.Connection
-	ch   *amqp.Channel
-	keys []string
+	conn     *amqp.Connection
+	ch       *amqp.Channel
+	keys     []string
+	exchange string
 }
 
 func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.ConnSettings) (m.Middleware, error) {
@@ -29,7 +30,7 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 	}
 
 	em.keys = keys
-
+	em.exchange = exchange
 	err = em.ch.ExchangeDeclare(
 		exchange, // name
 		"direct", // type
@@ -48,7 +49,63 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 }
 
 func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) (err error) {
-	return nil
+	q, err := em.ch.QueueDeclare(
+		"",    // name
+		false, // durability
+		false, // delete when unused
+		true,  // exclusive
+		false, // no-wait
+		nil,   // arguments
+	)
+
+	if err != nil {
+		return m.ErrMessageMiddlewareMessage
+	}
+
+	for _, key := range em.keys {
+		err = em.ch.QueueBind(
+			q.Name,      // queue name
+			key,         // routing key
+			em.exchange, // exchange
+			false,
+			nil)
+
+		if err != nil {
+			return m.ErrMessageMiddlewareMessage
+		}
+	}
+
+	msgs, err := em.ch.Consume(
+		q.Name,
+		"",
+		false,
+		false,
+		false,
+		false,
+		nil)
+
+	if err != nil {
+		return m.ErrMessageMiddlewareMessage
+	}
+
+	for d := range msgs {
+		msg := m.Message{Body: string(d.Body)}
+
+		ack := func() {
+			d.Ack(
+				false, // only ack this message, not the ones before
+			)
+		}
+		nack := func() {
+			d.Nack(
+				false, // only nack this message, not the ones before
+				true,  // requeue this message instead of discarding it
+			)
+		}
+		callbackFunc(msg, ack, nack)
+	}
+
+	return m.ErrMessageMiddlewareDisconnected // msgs is closed
 }
 
 func (em *ExchangeMiddleware) StopConsuming() {
