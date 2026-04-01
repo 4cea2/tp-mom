@@ -1,7 +1,9 @@
 package factory
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	m "github.com/7574-sistemas-distribuidos/tp-mom/golang/internal/middleware"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -117,6 +119,29 @@ func (em *ExchangeMiddleware) StopConsuming() {
 }
 
 func (em *ExchangeMiddleware) Send(msg m.Message) (err error) {
+	if em.conn == nil || em.ch == nil {
+		return m.ErrMessageMiddlewareDisconnected
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	for _, key := range em.keys {
+		err = em.ch.PublishWithContext(ctx,
+			em.exchange, // exchange
+			key,         // routing key
+			false,       // mandatory
+			false,       // immediate
+			amqp.Publishing{
+				DeliveryMode: amqp.Persistent, // survives broker restarts
+				ContentType:  "text/plain",
+				Body:         []byte(msg.Body),
+			})
+		if err != nil {
+			return m.ErrMessageMiddlewareMessage
+		}
+	}
+
 	return nil
 }
 
