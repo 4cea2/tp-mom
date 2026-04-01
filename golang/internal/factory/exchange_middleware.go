@@ -49,6 +49,10 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 }
 
 func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) (err error) {
+	if em.conn == nil || em.ch == nil {
+		// Esto seria preventivo, pero que pasaria si ocurre durante el consumo? (igual que el queue)
+		return m.ErrMessageMiddlewareDisconnected
+	}
 	q, err := em.ch.QueueDeclare(
 		"",    // name
 		false, // durability
@@ -117,5 +121,24 @@ func (em *ExchangeMiddleware) Send(msg m.Message) (err error) {
 }
 
 func (em *ExchangeMiddleware) Close() error {
+	var errCh, errConn error
+
+	if em.ch != nil {
+		errCh = em.ch.Close()
+	}
+	if em.conn != nil {
+		errConn = em.conn.Close()
+	}
+
+	if errCh != nil {
+		return m.ErrMessageMiddlewareClose
+	}
+	em.ch = nil
+
+	if errConn != nil {
+		return m.ErrMessageMiddlewareClose
+	}
+	em.conn = nil
+
 	return nil
 }
