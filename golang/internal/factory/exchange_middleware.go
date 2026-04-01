@@ -115,7 +115,14 @@ func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ac
 }
 
 func (em *ExchangeMiddleware) StopConsuming() {
-
+	if em.conn == nil || em.ch == nil {
+		// La firma no devuelve error, pero en su definición si (preguntar)
+		// return m.ErrMessageMiddlewareDisconnected
+	}
+	err := em.ch.Cancel("", false)
+	if err != nil {
+		// Ya se habia cerrado el channel? no hago nada?
+	}
 }
 
 func (em *ExchangeMiddleware) Send(msg m.Message) (err error) {
