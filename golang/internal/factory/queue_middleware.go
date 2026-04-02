@@ -88,23 +88,23 @@ func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack f
 	return m.ErrMessageMiddlewareDisconnected // msgs is closed
 }
 
-func (qm *QueueMiddleware) StopConsuming() {
+func (qm *QueueMiddleware) StopConsuming() error {
 	if qm.consumerTag == "" {
-		return // do nothing
+		return nil
 	}
 
 	tag := qm.consumerTag
 	qm.consumerTag = ""
 
 	if qm.conn == nil || qm.conn.IsClosed() || qm.ch == nil {
-		// La firma no devuelve error, pero en su definición si (preguntar)
-		// return m.ErrMessageMiddlewareDisconnected
+		return m.ErrMessageMiddlewareDisconnected
 	}
 	err := qm.ch.Cancel(tag, false)
 
 	if err != nil {
-		// Ya se habia cerrado el channel? no hago nada?
+		return m.ErrMessageMiddlewareDisconnected
 	}
+	return nil
 }
 
 func (qm *QueueMiddleware) Send(msg m.Message) (err error) {

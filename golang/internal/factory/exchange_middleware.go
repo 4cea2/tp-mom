@@ -116,23 +116,23 @@ func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ac
 	return m.ErrMessageMiddlewareDisconnected // msgs is closed
 }
 
-func (em *ExchangeMiddleware) StopConsuming() {
+func (em *ExchangeMiddleware) StopConsuming() error {
 	if em.consumerTag == "" {
-		return
+		return nil
 	}
 
 	tag := em.consumerTag
 	em.consumerTag = ""
-	
+
 	if em.conn == nil || em.conn.IsClosed() || em.ch == nil {
-		// La firma no devuelve error, pero en su definición si (preguntar)
-		// return m.ErrMessageMiddlewareDisconnected
+		return m.ErrMessageMiddlewareDisconnected
 	}
 	err := em.ch.Cancel(tag, false)
 
 	if err != nil {
-		// Ya se habia cerrado el channel? no hago nada?
+		return m.ErrMessageMiddlewareDisconnected
 	}
+	return nil
 }
 
 func (em *ExchangeMiddleware) Send(msg m.Message) (err error) {
