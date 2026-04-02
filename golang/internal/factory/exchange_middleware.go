@@ -10,10 +10,11 @@ import (
 )
 
 type ExchangeMiddleware struct {
-	conn     *amqp.Connection
-	ch       *amqp.Channel
-	keys     []string
-	exchange string
+	conn        *amqp.Connection
+	ch          *amqp.Channel
+	keys        []string
+	exchange    string
+	consumerTag string
 }
 
 func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.ConnSettings) (m.Middleware, error) {
@@ -31,6 +32,7 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 		return nil, err
 	}
 
+	em.consumerTag = ""
 	em.keys = keys
 	em.exchange = exchange
 	err = em.ch.ExchangeDeclare(
@@ -81,9 +83,10 @@ func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ac
 		}
 	}
 
+	em.consumerTag = "consumerTag"
 	msgs, err := em.ch.Consume(
 		q.Name,
-		"",
+		em.consumerTag,
 		false,
 		false,
 		false,
@@ -115,6 +118,10 @@ func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ac
 }
 
 func (em *ExchangeMiddleware) StopConsuming() {
+	if em.consumerTag == "" {
+		return
+	}
+	em.consumerTag = ""
 	if em.conn == nil || em.ch == nil {
 		// La firma no devuelve error, pero en su definición si (preguntar)
 		// return m.ErrMessageMiddlewareDisconnected
@@ -171,6 +178,8 @@ func (em *ExchangeMiddleware) Close() error {
 		return m.ErrMessageMiddlewareClose
 	}
 	em.conn = nil
+
+	em.consumerTag = ""
 
 	return nil
 }

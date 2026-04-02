@@ -10,9 +10,10 @@ import (
 )
 
 type QueueMiddleware struct {
-	conn *amqp.Connection
-	ch   *amqp.Channel
-	q    amqp.Queue
+	conn        *amqp.Connection
+	ch          *amqp.Channel
+	q           amqp.Queue
+	consumerTag string
 }
 
 func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.Middleware, error) {
@@ -29,6 +30,8 @@ func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.
 	if err != nil {
 		return nil, err
 	}
+
+	qm.consumerTag = "" // dont start consuming
 
 	qm.q, err = qm.ch.QueueDeclare(
 		queueName, // name
@@ -49,9 +52,11 @@ func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack f
 		return m.ErrMessageMiddlewareDisconnected
 	}
 
+	qm.consumerTag = "consumerTag" // start consuming
+
 	msgs, err := qm.ch.Consume(
 		qm.q.Name,
-		"",
+		qm.consumerTag,
 		false,
 		false,
 		false,
@@ -84,11 +89,15 @@ func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack f
 }
 
 func (qm *QueueMiddleware) StopConsuming() {
+	if qm.consumerTag == "" {
+		return // do nothing
+	}
+	qm.consumerTag = ""
 	if qm.conn == nil || qm.ch == nil {
 		// La firma no devuelve error, pero en su definición si (preguntar)
 		// return m.ErrMessageMiddlewareDisconnected
 	}
-	err := qm.ch.Cancel("", false)
+	err := qm.ch.Cancel(qm.consumerTag, false)
 	if err != nil {
 		// Ya se habia cerrado el channel? no hago nada?
 	}
@@ -138,6 +147,8 @@ func (qm *QueueMiddleware) Close() error {
 		return m.ErrMessageMiddlewareClose
 	}
 	qm.conn = nil
+
+	qm.consumerTag = ""
 
 	return nil
 }
