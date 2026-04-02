@@ -52,7 +52,7 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 	return em, nil
 }
 
-func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) (err error) {
+func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) error {
 	if em.conn == nil || em.conn.IsClosed() || em.ch == nil {
 		return m.ErrMessageMiddlewareDisconnected
 	}
@@ -135,7 +135,7 @@ func (em *ExchangeMiddleware) StopConsuming() error {
 	return nil
 }
 
-func (em *ExchangeMiddleware) Send(msg m.Message) (err error) {
+func (em *ExchangeMiddleware) Send(msg m.Message) error {
 	if em.conn == nil || em.conn.IsClosed() || em.ch == nil {
 		return m.ErrMessageMiddlewareDisconnected
 	}
@@ -144,7 +144,7 @@ func (em *ExchangeMiddleware) Send(msg m.Message) (err error) {
 	defer cancel()
 
 	for _, key := range em.keys {
-		err = em.ch.PublishWithContext(ctx,
+		err := em.ch.PublishWithContext(ctx,
 			em.exchange, // exchange
 			key,         // routing key
 			false,       // mandatory

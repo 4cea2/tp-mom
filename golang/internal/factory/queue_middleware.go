@@ -47,7 +47,7 @@ func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.
 	return qm, err
 }
 
-func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) (err error) {
+func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) error {
 	if qm.conn == nil || qm.conn.IsClosed() || qm.ch == nil {
 		return m.ErrMessageMiddlewareDisconnected
 	}
@@ -107,7 +107,7 @@ func (qm *QueueMiddleware) StopConsuming() error {
 	return nil
 }
 
-func (qm *QueueMiddleware) Send(msg m.Message) (err error) {
+func (qm *QueueMiddleware) Send(msg m.Message) error {
 	if qm.conn == nil || qm.conn.IsClosed() || qm.ch == nil {
 		return m.ErrMessageMiddlewareDisconnected
 	}
