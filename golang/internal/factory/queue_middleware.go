@@ -92,7 +92,6 @@ func (qm *QueueMiddleware) StopConsuming() {
 	if qm.consumerTag == "" {
 		return // do nothing
 	}
-	qm.consumerTag = ""
 	if qm.conn == nil || qm.ch == nil {
 		// La firma no devuelve error, pero en su definición si (preguntar)
 		// return m.ErrMessageMiddlewareDisconnected
@@ -101,6 +100,7 @@ func (qm *QueueMiddleware) StopConsuming() {
 	if err != nil {
 		// Ya se habia cerrado el channel? no hago nada?
 	}
+	qm.consumerTag = ""
 }
 
 func (qm *QueueMiddleware) Send(msg m.Message) (err error) {

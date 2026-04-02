@@ -121,15 +121,16 @@ func (em *ExchangeMiddleware) StopConsuming() {
 	if em.consumerTag == "" {
 		return
 	}
-	em.consumerTag = ""
+
 	if em.conn == nil || em.ch == nil {
 		// La firma no devuelve error, pero en su definición si (preguntar)
 		// return m.ErrMessageMiddlewareDisconnected
 	}
-	err := em.ch.Cancel("", false)
+	err := em.ch.Cancel(em.consumerTag, false)
 	if err != nil {
 		// Ya se habia cerrado el channel? no hago nada?
 	}
+	em.consumerTag = ""
 }
 
 func (em *ExchangeMiddleware) Send(msg m.Message) (err error) {
