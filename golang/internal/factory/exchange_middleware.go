@@ -53,8 +53,7 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 }
 
 func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) (err error) {
-	if em.conn == nil || em.ch == nil {
-		// Esto seria preventivo, pero que pasaria si ocurre durante el consumo? (igual que el queue)
+	if em.conn == nil || em.conn.IsClosed() || em.ch == nil {
 		return m.ErrMessageMiddlewareDisconnected
 	}
 	q, err := em.ch.QueueDeclare(
@@ -122,19 +121,22 @@ func (em *ExchangeMiddleware) StopConsuming() {
 		return
 	}
 
-	if em.conn == nil || em.ch == nil {
+	tag := em.consumerTag
+	em.consumerTag = ""
+	
+	if em.conn == nil || em.conn.IsClosed() || em.ch == nil {
 		// La firma no devuelve error, pero en su definición si (preguntar)
 		// return m.ErrMessageMiddlewareDisconnected
 	}
-	err := em.ch.Cancel(em.consumerTag, false)
+	err := em.ch.Cancel(tag, false)
+
 	if err != nil {
 		// Ya se habia cerrado el channel? no hago nada?
 	}
-	em.consumerTag = ""
 }
 
 func (em *ExchangeMiddleware) Send(msg m.Message) (err error) {
-	if em.conn == nil || em.ch == nil {
+	if em.conn == nil || em.conn.IsClosed() || em.ch == nil {
 		return m.ErrMessageMiddlewareDisconnected
 	}
 
@@ -170,17 +172,13 @@ func (em *ExchangeMiddleware) Close() error {
 		errConn = em.conn.Close()
 	}
 
-	if errCh != nil {
-		return m.ErrMessageMiddlewareClose
-	}
-	em.ch = nil
-
-	if errConn != nil {
-		return m.ErrMessageMiddlewareClose
-	}
 	em.conn = nil
-
+	em.ch = nil
 	em.consumerTag = ""
+
+	if errCh != nil || errConn != nil {
+		return m.ErrMessageMiddlewareClose
+	}
 
 	return nil
 }

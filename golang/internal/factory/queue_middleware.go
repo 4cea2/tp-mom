@@ -48,7 +48,7 @@ func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.
 }
 
 func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) (err error) {
-	if qm.conn == nil || qm.ch == nil {
+	if qm.conn == nil || qm.conn.IsClosed() || qm.ch == nil {
 		return m.ErrMessageMiddlewareDisconnected
 	}
 
@@ -92,19 +92,23 @@ func (qm *QueueMiddleware) StopConsuming() {
 	if qm.consumerTag == "" {
 		return // do nothing
 	}
-	if qm.conn == nil || qm.ch == nil {
+
+	tag := qm.consumerTag
+	qm.consumerTag = ""
+
+	if qm.conn == nil || qm.conn.IsClosed() || qm.ch == nil {
 		// La firma no devuelve error, pero en su definición si (preguntar)
 		// return m.ErrMessageMiddlewareDisconnected
 	}
-	err := qm.ch.Cancel(qm.consumerTag, false)
+	err := qm.ch.Cancel(tag, false)
+
 	if err != nil {
 		// Ya se habia cerrado el channel? no hago nada?
 	}
-	qm.consumerTag = ""
 }
 
 func (qm *QueueMiddleware) Send(msg m.Message) (err error) {
-	if qm.conn == nil || qm.ch == nil {
+	if qm.conn == nil || qm.conn.IsClosed() || qm.ch == nil {
 		return m.ErrMessageMiddlewareDisconnected
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // cancel the publish operation if it takes longer than 5 seconds
@@ -138,17 +142,13 @@ func (qm *QueueMiddleware) Close() error {
 		errConn = qm.conn.Close()
 	}
 
-	if errCh != nil {
-		return m.ErrMessageMiddlewareClose
-	}
-	qm.ch = nil
-
-	if errConn != nil {
-		return m.ErrMessageMiddlewareClose
-	}
 	qm.conn = nil
-
+	qm.ch = nil
 	qm.consumerTag = ""
+
+	if errCh != nil || errConn != nil {
+		return m.ErrMessageMiddlewareClose
+	}
 
 	return nil
 }
