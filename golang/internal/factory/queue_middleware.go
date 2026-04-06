@@ -105,22 +105,5 @@ func (qm *QueueMiddleware) Send(msg m.Message) error {
 }
 
 func (qm *QueueMiddleware) Close() error {
-	var errCh, errConn error
-
-	if qm.ch != nil {
-		errCh = qm.ch.Close()
-	}
-	if qm.conn != nil {
-		errConn = qm.conn.Close()
-	}
-
-	qm.conn = nil
-	qm.ch = nil
-	qm.consumerTag = ""
-
-	if errCh != nil || errConn != nil {
-		return m.ErrMessageMiddlewareClose
-	}
-
-	return nil
+	return qm.close()
 }

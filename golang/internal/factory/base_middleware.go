@@ -55,3 +55,18 @@ func (bm *baseMiddleware) stop() error {
 	}
 	return nil
 }
+
+func (bm *baseMiddleware) close() error {
+	var errCh, errConn error
+	if bm.ch != nil {
+		errCh = bm.ch.Close()
+	}
+	if bm.conn != nil {
+		errConn = bm.conn.Close()
+	}
+	bm.ch, bm.conn, bm.consumerTag = nil, nil, ""
+	if errCh != nil || errConn != nil {
+		return m.ErrMessageMiddlewareClose
+	}
+	return nil
+}

@@ -137,22 +137,5 @@ func (em *ExchangeMiddleware) Send(msg m.Message) error {
 }
 
 func (em *ExchangeMiddleware) Close() error {
-	var errCh, errConn error
-
-	if em.ch != nil {
-		errCh = em.ch.Close()
-	}
-	if em.conn != nil {
-		errConn = em.conn.Close()
-	}
-
-	em.conn = nil
-	em.ch = nil
-	em.consumerTag = ""
-
-	if errCh != nil || errConn != nil {
-		return m.ErrMessageMiddlewareClose
-	}
-
-	return nil
+	return em.close()
 }
