@@ -5,7 +5,6 @@ import (
 	"time"
 
 	m "github.com/7574-sistemas-distribuidos/tp-mom/golang/internal/middleware"
-	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 type ExchangeMiddleware struct {
@@ -87,16 +86,7 @@ func (em *ExchangeMiddleware) Send(msg m.Message) error {
 	defer cancel()
 
 	for _, key := range em.keys {
-		err := em.ch.PublishWithContext(ctx,
-			em.exchange, // exchange
-			key,         // routing key
-			false,       // mandatory
-			false,       // immediate
-			amqp.Publishing{
-				DeliveryMode: amqp.Persistent, // survives broker restarts
-				ContentType:  "text/plain",
-				Body:         []byte(msg.Body),
-			})
+		err := em.publish(msg, ctx, em.exchange, key)
 		if err != nil {
 			return m.ErrMessageMiddlewareMessage
 		}

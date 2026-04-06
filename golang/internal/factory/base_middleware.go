@@ -1,6 +1,7 @@
 package factory
 
 import (
+	"context"
 	"fmt"
 
 	m "github.com/7574-sistemas-distribuidos/tp-mom/golang/internal/middleware"
@@ -104,4 +105,18 @@ func (bm *baseMiddleware) consume(queueName string, callBackFunc func(msg m.Mess
 	}
 
 	return m.ErrMessageMiddlewareMessage // msgs is closed
+}
+
+func (bm *baseMiddleware) publish(msg m.Message, ctx context.Context, exchange string, key string) error {
+	return bm.ch.PublishWithContext(
+		ctx,
+		exchange,
+		key,
+		false,
+		false,
+		amqp.Publishing{
+			DeliveryMode: amqp.Persistent, // survives broker restarts
+			ContentType:  "text/plain",
+			Body:         []byte(msg.Body),
+		})
 }

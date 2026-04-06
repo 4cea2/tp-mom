@@ -53,18 +53,7 @@ func (qm *QueueMiddleware) Send(msg m.Message) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // cancel the publish operation if it takes longer than 5 seconds
 	defer cancel()
 
-	errPublish := qm.ch.PublishWithContext(
-		ctx,
-		"",        // use default exchange (routes directly to the queue)
-		qm.q.Name, // queue name when using default exchange
-		false,     // msg drop message if no queue is bound
-		false,
-		amqp.Publishing{
-			DeliveryMode: amqp.Persistent, // survives broker restarts
-			ContentType:  "text/plain",
-			Body:         []byte(msg.Body),
-		})
-
+	errPublish := qm.publish(msg, ctx, "", qm.q.Name)
 	if errPublish != nil {
 		return m.ErrMessageMiddlewareMessage
 	}
