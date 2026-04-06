@@ -35,7 +35,7 @@ func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.
 }
 
 func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) error {
-	if qm.conn == nil || qm.conn.IsClosed() || qm.ch == nil {
+	if qm.isDisconnected() {
 		return m.ErrMessageMiddlewareDisconnected
 	}
 
@@ -83,7 +83,7 @@ func (qm *QueueMiddleware) StopConsuming() error {
 	tag := qm.consumerTag
 	qm.consumerTag = ""
 
-	if qm.conn == nil || qm.conn.IsClosed() || qm.ch == nil {
+	if qm.isDisconnected() {
 		return m.ErrMessageMiddlewareDisconnected
 	}
 	err := qm.ch.Cancel(tag, false)
@@ -95,7 +95,7 @@ func (qm *QueueMiddleware) StopConsuming() error {
 }
 
 func (qm *QueueMiddleware) Send(msg m.Message) error {
-	if qm.conn == nil || qm.conn.IsClosed() || qm.ch == nil {
+	if qm.isDisconnected() {
 		return m.ErrMessageMiddlewareDisconnected
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second) // cancel the publish operation if it takes longer than 5 seconds

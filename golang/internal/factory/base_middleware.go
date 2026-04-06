@@ -33,3 +33,7 @@ func newBaseMiddleware(connectionSettings m.ConnSettings) (*baseMiddleware, erro
 
 	return bm, nil
 }
+
+func (bm *baseMiddleware) isDisconnected() bool {
+	return bm.conn == nil || bm.conn.IsClosed() || bm.ch == nil
+}

@@ -42,7 +42,7 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 }
 
 func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) error {
-	if em.conn == nil || em.conn.IsClosed() || em.ch == nil {
+	if em.isDisconnected() {
 		return m.ErrMessageMiddlewareDisconnected
 	}
 	q, err := em.ch.QueueDeclare(
@@ -113,7 +113,7 @@ func (em *ExchangeMiddleware) StopConsuming() error {
 	tag := em.consumerTag
 	em.consumerTag = ""
 
-	if em.conn == nil || em.conn.IsClosed() || em.ch == nil {
+	if em.isDisconnected() {
 		return m.ErrMessageMiddlewareDisconnected
 	}
 	err := em.ch.Cancel(tag, false)
@@ -125,7 +125,7 @@ func (em *ExchangeMiddleware) StopConsuming() error {
 }
 
 func (em *ExchangeMiddleware) Send(msg m.Message) error {
-	if em.conn == nil || em.conn.IsClosed() || em.ch == nil {
+	if em.isDisconnected() {
 		return m.ErrMessageMiddlewareDisconnected
 	}
 
