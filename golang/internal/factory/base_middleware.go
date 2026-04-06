@@ -70,3 +70,38 @@ func (bm *baseMiddleware) close() error {
 	}
 	return nil
 }
+
+func (bm *baseMiddleware) consume(queueName string, callBackFunc func(msg m.Message, ack func(), nack func())) error {
+	bm.consumerTag = "consumerTag"
+	msgs, err := bm.ch.Consume(
+		queueName,
+		bm.consumerTag,
+		false,
+		false,
+		false,
+		false,
+		nil,
+	)
+	if err != nil {
+		return m.ErrMessageMiddlewareMessage
+	}
+
+	for d := range msgs {
+		msg := m.Message{Body: string(d.Body)}
+
+		ack := func() {
+			d.Ack(
+				false, // only ack this message, not the ones before
+			)
+		}
+		nack := func() {
+			d.Nack(
+				false, // only nack this message, not the ones before
+				true,  // requeue this message instead of discarding it
+			)
+		}
+		callBackFunc(msg, ack, nack)
+	}
+
+	return m.ErrMessageMiddlewareMessage // msgs is closed
+}

@@ -39,40 +39,7 @@ func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack f
 		return m.ErrMessageMiddlewareDisconnected
 	}
 
-	qm.consumerTag = "consumerTag" // start consuming
-
-	msgs, err := qm.ch.Consume(
-		qm.q.Name,
-		qm.consumerTag,
-		false,
-		false,
-		false,
-		false,
-		nil,
-	)
-
-	if err != nil {
-		return m.ErrMessageMiddlewareMessage
-	}
-
-	for d := range msgs {
-		msg := m.Message{Body: string(d.Body)}
-
-		ack := func() {
-			d.Ack(
-				false, // only ack this message, not the ones before
-			)
-		}
-		nack := func() {
-			d.Nack(
-				false, // only nack this message, not the ones before
-				true,  // requeue this message instead of discarding it
-			)
-		}
-		callbackFunc(msg, ack, nack)
-	}
-
-	return m.ErrMessageMiddlewareDisconnected // msgs is closed
+	return qm.consume(qm.q.Name, callbackFunc)
 }
 
 func (qm *QueueMiddleware) StopConsuming() error {
