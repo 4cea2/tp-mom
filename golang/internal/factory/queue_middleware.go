@@ -2,7 +2,6 @@ package factory
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	m "github.com/7574-sistemas-distribuidos/tp-mom/golang/internal/middleware"
@@ -10,29 +9,17 @@ import (
 )
 
 type QueueMiddleware struct {
-	conn        *amqp.Connection
-	ch          *amqp.Channel
-	q           amqp.Queue
-	consumerTag string
+	*baseMiddleware
+	q amqp.Queue
 }
 
 func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.Middleware, error) {
 	qm := new(QueueMiddleware)
-	addr := fmt.Sprintf("amqp://guest:guest@%s:%d/", connectionSettings.Hostname, connectionSettings.Port)
-	var err error
-
-	qm.conn, err = amqp.Dial(addr)
+	base, err := newBaseMiddleware(connectionSettings)
 	if err != nil {
 		return nil, err
 	}
-
-	qm.ch, err = qm.conn.Channel()
-	if err != nil {
-		return nil, err
-	}
-
-	qm.consumerTag = "" // dont start consuming
-
+	qm.baseMiddleware = base
 	qm.q, err = qm.ch.QueueDeclare(
 		queueName, // name
 		true,      // durability

@@ -2,7 +2,6 @@ package factory
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	m "github.com/7574-sistemas-distribuidos/tp-mom/golang/internal/middleware"
@@ -10,29 +9,19 @@ import (
 )
 
 type ExchangeMiddleware struct {
-	conn        *amqp.Connection
-	ch          *amqp.Channel
-	keys        []string
-	exchange    string
-	consumerTag string
+	*baseMiddleware
+	keys     []string
+	exchange string
 }
 
 func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.ConnSettings) (m.Middleware, error) {
 	em := new(ExchangeMiddleware)
-	addr := fmt.Sprintf("amqp://guest:guest@%s:%d/", connectionSettings.Hostname, connectionSettings.Port)
-	var err error
-
-	em.conn, err = amqp.Dial(addr)
+	base, err := newBaseMiddleware(connectionSettings)
 	if err != nil {
 		return nil, err
 	}
+	em.baseMiddleware = base
 
-	em.ch, err = em.conn.Channel()
-	if err != nil {
-		return nil, err
-	}
-
-	em.consumerTag = ""
 	em.keys = keys
 	em.exchange = exchange
 	err = em.ch.ExchangeDeclare(
