@@ -76,22 +76,7 @@ func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack f
 }
 
 func (qm *QueueMiddleware) StopConsuming() error {
-	if qm.consumerTag == "" {
-		return nil
-	}
-
-	tag := qm.consumerTag
-	qm.consumerTag = ""
-
-	if qm.isDisconnected() {
-		return m.ErrMessageMiddlewareDisconnected
-	}
-	err := qm.ch.Cancel(tag, false)
-
-	if err != nil {
-		return m.ErrMessageMiddlewareDisconnected
-	}
-	return nil
+	return qm.stop()
 }
 
 func (qm *QueueMiddleware) Send(msg m.Message) error {

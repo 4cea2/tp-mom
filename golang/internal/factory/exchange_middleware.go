@@ -106,22 +106,7 @@ func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ac
 }
 
 func (em *ExchangeMiddleware) StopConsuming() error {
-	if em.consumerTag == "" {
-		return nil
-	}
-
-	tag := em.consumerTag
-	em.consumerTag = ""
-
-	if em.isDisconnected() {
-		return m.ErrMessageMiddlewareDisconnected
-	}
-	err := em.ch.Cancel(tag, false)
-
-	if err != nil {
-		return m.ErrMessageMiddlewareDisconnected
-	}
-	return nil
+	return em.stop()
 }
 
 func (em *ExchangeMiddleware) Send(msg m.Message) error {

@@ -37,3 +37,21 @@ func newBaseMiddleware(connectionSettings m.ConnSettings) (*baseMiddleware, erro
 func (bm *baseMiddleware) isDisconnected() bool {
 	return bm.conn == nil || bm.conn.IsClosed() || bm.ch == nil
 }
+
+func (bm *baseMiddleware) stop() error {
+	if bm.consumerTag == "" {
+		return nil
+	}
+	tag := bm.consumerTag
+	bm.consumerTag = ""
+
+	if bm.isDisconnected() {
+		return m.ErrMessageMiddlewareDisconnected
+	}
+	err := bm.ch.Cancel(tag, false)
+
+	if err != nil {
+		return m.ErrMessageMiddlewareDisconnected
+	}
+	return nil
+}
