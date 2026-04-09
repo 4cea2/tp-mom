@@ -31,6 +31,7 @@ func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.
 		},
 	)
 	if err != nil {
+		qm.close()
 		return nil, err
 	}
 
@@ -41,6 +42,7 @@ func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.
 	)
 
 	if err != nil {
+		qm.close()
 		return nil, err
 	}
 	return qm, nil

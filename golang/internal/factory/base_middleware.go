@@ -27,6 +27,7 @@ func newBaseMiddleware(connectionSettings m.ConnSettings) (*baseMiddleware, erro
 
 	bm.ch, err = bm.conn.Channel()
 	if err != nil {
+		bm.conn.Close()
 		return nil, err
 	}
 

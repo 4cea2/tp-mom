@@ -35,6 +35,7 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 	)
 
 	if err != nil {
+		em.close()
 		return nil, err
 	}
 
@@ -47,6 +48,7 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 		nil,   // arguments
 	)
 	if err != nil {
+		em.close()
 		return nil, err
 	}
 	em.queueName = q.Name
