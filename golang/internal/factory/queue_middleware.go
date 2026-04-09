@@ -30,12 +30,20 @@ func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.
 			amqp.QueueTypeArg: amqp.QueueTypeQuorum,
 		},
 	)
+	if err != nil {
+		return nil, err
+	}
+
 	err = qm.ch.Qos(
 		1,     // prefetch count
 		0,     // prefetch size
 		false, // global
 	)
-	return qm, err
+
+	if err != nil {
+		return nil, err
+	}
+	return qm, nil
 }
 
 func (qm *QueueMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) error {
