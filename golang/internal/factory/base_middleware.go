@@ -3,6 +3,7 @@ package factory
 import (
 	"context"
 	"fmt"
+	"time"
 
 	m "github.com/7574-sistemas-distribuidos/tp-mom/golang/internal/middleware"
 	amqp "github.com/rabbitmq/amqp091-go"
@@ -74,7 +75,7 @@ func (bm *baseMiddleware) close() error {
 }
 
 func (bm *baseMiddleware) consume(queueName string, callBackFunc func(msg m.Message, ack func(), nack func())) error {
-	bm.consumerTag = "consumerTag"
+	bm.consumerTag = fmt.Sprintf("consumer%d", time.Now().UnixNano())
 	msgs, err := bm.ch.Consume(
 		queueName,
 		bm.consumerTag,
