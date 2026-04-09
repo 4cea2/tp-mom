@@ -30,7 +30,11 @@ func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.
 			amqp.QueueTypeArg: amqp.QueueTypeQuorum,
 		},
 	)
-
+	err = qm.ch.Qos(
+		1,     // prefetch count
+		0,     // prefetch size
+		false, // global
+	)
 	return qm, err
 }
 
