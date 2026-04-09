@@ -9,8 +9,9 @@ import (
 
 type ExchangeMiddleware struct {
 	*baseMiddleware
-	keys     []string
-	exchange string
+	keys      []string
+	exchange  string
+	queueName string
 }
 
 func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.ConnSettings) (m.Middleware, error) {
@@ -37,13 +38,6 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 		return nil, err
 	}
 
-	return em, nil
-}
-
-func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) error {
-	if em.isDisconnected() {
-		return m.ErrMessageMiddlewareDisconnected
-	}
 	q, err := em.ch.QueueDeclare(
 		"",    // name
 		false, // durability
@@ -52,16 +46,24 @@ func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ac
 		false, // no-wait
 		nil,   // arguments
 	)
-
 	if err != nil {
-		return m.ErrMessageMiddlewareMessage
+		return nil, err
+	}
+	em.queueName = q.Name
+
+	return em, nil
+}
+
+func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ack func(), nack func())) error {
+	if em.isDisconnected() {
+		return m.ErrMessageMiddlewareDisconnected
 	}
 
 	for _, key := range em.keys {
-		err = em.ch.QueueBind(
-			q.Name,      // queue name
-			key,         // routing key
-			em.exchange, // exchange
+		err := em.ch.QueueBind(
+			em.queueName, // queue name
+			key,          // routing key
+			em.exchange,  // exchange
 			false,
 			nil)
 
@@ -70,7 +72,7 @@ func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ac
 		}
 	}
 
-	return em.consume(q.Name, callbackFunc)
+	return em.consume(em.queueName, callbackFunc)
 }
 
 func (em *ExchangeMiddleware) StopConsuming() error {
