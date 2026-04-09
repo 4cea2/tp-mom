@@ -60,6 +60,7 @@ func (em *ExchangeMiddleware) StartConsuming(callbackFunc func(msg m.Message, ac
 	}
 
 	for _, key := range em.keys {
+		// binding is idempotent, so "nothing" happen if this method is called repeatly
 		err := em.ch.QueueBind(
 			em.queueName, // queue name
 			key,          // routing key
