@@ -22,17 +22,15 @@ func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.
 	qm.baseMiddleware = base
 	qm.q, err = qm.ch.QueueDeclare(
 		queueName, // name
-		true,      // durability
+		false,     // durability
 		false,     // delete when unused
 		false,     // exclusive
 		false,     // no-wait
-		amqp.Table{
-			amqp.QueueTypeArg: amqp.QueueTypeQuorum,
-		},
+		nil,
 	)
 	if err != nil {
 		qm.close()
-		return nil, err
+		return nil, m.ErrMessageMiddlewareDisconnected
 	}
 
 	err = qm.ch.Qos(
@@ -43,7 +41,7 @@ func NewQueueMiddleware(queueName string, connectionSettings m.ConnSettings) (m.
 
 	if err != nil {
 		qm.close()
-		return nil, err
+		return nil, m.ErrMessageMiddlewareDisconnected
 	}
 	return qm, nil
 }

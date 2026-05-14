@@ -36,7 +36,7 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 
 	if err != nil {
 		em.close()
-		return nil, err
+		return nil, m.ErrMessageMiddlewareDisconnected
 	}
 
 	q, err := em.ch.QueueDeclare(
@@ -49,7 +49,7 @@ func NewExchangeMiddleware(exchange string, keys []string, connectionSettings m.
 	)
 	if err != nil {
 		em.close()
-		return nil, err
+		return nil, m.ErrMessageMiddlewareDisconnected
 	}
 	em.queueName = q.Name
 

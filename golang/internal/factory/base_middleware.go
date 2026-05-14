@@ -23,13 +23,13 @@ func newBaseMiddleware(connectionSettings m.ConnSettings) (*baseMiddleware, erro
 
 	bm.conn, err = amqp.Dial(addr)
 	if err != nil {
-		return nil, err
+		return nil, m.ErrMessageMiddlewareDisconnected
 	}
 
 	bm.ch, err = bm.conn.Channel()
 	if err != nil {
 		bm.conn.Close()
-		return nil, err
+		return nil, m.ErrMessageMiddlewareDisconnected
 	}
 
 	bm.consumerTag = ""
@@ -117,8 +117,7 @@ func (bm *baseMiddleware) publish(msg m.Message, ctx context.Context, exchange s
 		false,
 		false,
 		amqp.Publishing{
-			DeliveryMode: amqp.Persistent, // survives broker restarts
-			ContentType:  "text/plain",
-			Body:         []byte(msg.Body),
+			ContentType: "text/plain",
+			Body:        []byte(msg.Body),
 		})
 }
